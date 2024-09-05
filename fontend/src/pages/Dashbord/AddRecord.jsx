@@ -28,6 +28,16 @@ const AddRecord = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // ตรวจสอบว่าข้อมูลทั้งหมดได้ถูกกรอกหรือไม่
+    if (!financial.category || !financial.date || !financial.description || !financial.amount || !financial.paymentMethod) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Please fill out all fields',
+        icon: 'error'
+      });
+      return;
+    }
+
     // เพิ่ม userID เข้าไปในข้อมูลที่ส่ง
     const record = { ...financial, userID: user.id };
 
@@ -68,7 +78,9 @@ const AddRecord = () => {
             name="category"
             value={financial.category}
             onChange={handleChange}
+            required
           >
+            <option value="">Select a Financial Type</option>
             <option value="income">Income</option>
             <option value="expense">Expense</option>
           </select>
@@ -85,6 +97,7 @@ const AddRecord = () => {
             className="input input-bordered"
             value={financial.date}
             onChange={handleChange}
+            required
           />
         </div>
 
@@ -99,6 +112,7 @@ const AddRecord = () => {
             placeholder="Enter description"
             value={financial.description}
             onChange={handleChange}
+            required
           />
         </div>
 
@@ -115,6 +129,7 @@ const AddRecord = () => {
             placeholder="Enter amount"
             value={financial.amount}
             onChange={handleChange}
+            required
           />
         </div>
 
@@ -128,6 +143,7 @@ const AddRecord = () => {
             className="select select-bordered"
             value={financial.paymentMethod}
             onChange={handleChange}
+            required
           >
             <option value="">Select a payment method</option>
             <option value="cash">Cash</option>

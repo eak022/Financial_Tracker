@@ -13,8 +13,15 @@ function Table() {
     const fetchData = async () => {
       try {
         if (user) { // ตรวจสอบว่าผู้ใช้ได้ล็อกอินแล้ว
-          const data = await FinancialService.getAllFinancialRecordByUserId(user.id); // ใช้ FinancialService
-          setRecords(data);
+          const response = await FinancialService.getAllFinancialRecordByUserId(user.id); // ใช้ FinancialService
+          console.log("Data fetched: ", response); // ตรวจสอบโครงสร้างของข้อมูล
+
+          // ตรวจสอบว่า response.data เป็นอาร์เรย์หรือไม่
+          if (Array.isArray(response.data)) {
+            setRecords(response.data);
+          } else {
+            console.error('Expected response.data to be an array but received:', response);
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -23,33 +30,33 @@ function Table() {
 
     fetchData();
   }, [user]); // เพิ่ม 'user' เป็น dependency
-
   const handleDelete = async (id) => {
     const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'You won\'t be able to revert this!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!'
+        title: 'คุณแน่ใจหรือ?',
+        text: 'คุณจะไม่สามารถกู้คืนสิ่งนี้ได้!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ใช่, ลบมัน!'
     });
 
     if (result.isConfirmed) {
-      try {
-        const response = await FinancialService.deleteFinancialRecord(id); // ใช้ FinancialService สำหรับลบข้อมูล
-        if (response.ok) {
-          Swal.fire('Deleted!', 'Your record has been deleted.', 'success');
-          setRecords(records.filter(record => record.id !== id));
-        } else {
-          throw new Error('Failed to delete record');
+        try {
+            const response = await FinancialService.deleteFinancialRecord(id);
+            if (response.status === 200 || response.status === 204) {
+                Swal.fire('ลบแล้ว!', 'เรคคอร์ดของคุณถูกลบแล้ว.', 'success');
+                setRecords(records.filter(record => record.id !== id));
+            } else {
+                throw new Error(`ไม่สามารถลบเรคคอร์ดได้. รหัสสถานะ: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('ข้อผิดพลาด:', error);
+            Swal.fire('ล้มเหลว!', `ไม่สามารถลบเรคคอร์ดได้. ${error.message}`, 'error');
         }
-      } catch (error) {
-        console.error('Error:', error);
-        Swal.fire('Failed!', 'Failed to delete record.', 'error');
-      }
     }
-  };
+};
+
 
   const handleEdit = (id) => {
     navigate(`/edit/${id}`); // นำทางไปยังหน้าการแก้ไข
@@ -71,7 +78,7 @@ function Table() {
         </thead>
         <tbody>
           {records.map((record, index) => (
-            <tr key={record.id || index}>
+            <tr key={record.id || index}> {/* ใช้ index ถ้าไม่มี id */}
               <th>{index + 1}</th>
               <td>{record.category}</td>
               <td>{new Date(record.date).toLocaleDateString()}</td>
@@ -79,14 +86,14 @@ function Table() {
               <td>{record.amount}</td>
               <td>{record.paymentMethod}</td>
               <td>
-                <button 
-                  onClick={() => handleEdit(record.id)} 
+                <button
+                  onClick={() => handleEdit(record.id)}
                   className="btn btn-secondary btn-sm mr-2"
                 >
                   Edit
                 </button>
-                <button 
-                  onClick={() => handleDelete(record.id)} 
+                <button
+                  onClick={() => handleDelete(record.id)}
                   className="btn btn-danger btn-sm"
                 >
                   Delete

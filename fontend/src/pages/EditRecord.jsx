@@ -1,20 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
+import FinancialService from '../services/financial.service';
 
 const EditRecord = () => {
-  const { id } = useParams(); // รับ ID จาก URL
-  const [financial, setFinancial] = useState(null);
+  const { id } = useParams();
+  const [financial, setFinancial] = useState({
+    category: "",
+    date: "",
+    description: "",
+    amount: "",
+    paymentMethod: ""
+  });
+  const { user } = useUser();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/v1/financial/${id}`);
-        const data = await response.json();
-        setFinancial(data);
+        const response = await FinancialService.getAllFinancialRecordById(id); // Corrected API call
+        if (response.status === 200) {
+          setFinancial(response.data); // Set the fetched data to the state
+        } else {
+          throw new Error('Failed to fetch record');
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
+        Swal.fire('Error', 'Failed to fetch record', 'error');
       }
     };
 
@@ -28,16 +41,23 @@ const EditRecord = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await fetch(`http://localhost:5000/api/v1/financial/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(financial)
-      });
 
-      if (response.ok) {
+    // Ensure all fields are filled
+    if (!financial.category || !financial.date || !financial.description || !financial.amount || !financial.paymentMethod) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Please fill out all fields',
+        icon: 'error'
+      });
+      return;
+    }
+
+    // Prepare the updated record
+    const updatedRecord = { ...financial, userID: user.id };
+
+    try {
+      const response = await FinancialService.updateFinancialRecord(id, updatedRecord);
+      if (response.status === 200) {
         Swal.fire('Updated!', 'Your record has been updated.', 'success');
         navigate('/');
       } else {
@@ -55,22 +75,7 @@ const EditRecord = () => {
     <div className="p-4 max-w-lg mx-auto">
       <h1 className="text-2xl font-bold mb-4">Edit Record</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* User ID */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">User ID</span>
-          </label>
-          <input
-            type="text"
-            name="userID"
-            className="input input-bordered"
-            value={financial.userID}
-            onChange={handleChange}
-            disabled
-          />
-        </div>
-
-        {/* Category of Entry */}
+        {/* Category */}
         <div className="form-control">
           <label className="label">
             <span className="label-text">Category</span>
@@ -80,7 +85,9 @@ const EditRecord = () => {
             name="category"
             value={financial.category}
             onChange={handleChange}
+            required
           >
+            <option value="">Select a Financial Category</option>
             <option value="income">Income</option>
             <option value="expense">Expense</option>
           </select>
@@ -97,6 +104,7 @@ const EditRecord = () => {
             className="input input-bordered"
             value={financial.date}
             onChange={handleChange}
+            required
           />
         </div>
 
@@ -108,8 +116,10 @@ const EditRecord = () => {
           <textarea
             name="description"
             className="textarea textarea-bordered"
+            placeholder="Enter description"
             value={financial.description}
             onChange={handleChange}
+            required
           />
         </div>
 
@@ -123,8 +133,10 @@ const EditRecord = () => {
             step="0.01"
             name="amount"
             className="input input-bordered"
+            placeholder="Enter amount"
             value={financial.amount}
             onChange={handleChange}
+            required
           />
         </div>
 
@@ -138,7 +150,9 @@ const EditRecord = () => {
             className="select select-bordered"
             value={financial.paymentMethod}
             onChange={handleChange}
+            required
           >
+            <option value="">Select a payment method</option>
             <option value="cash">Cash</option>
             <option value="credit_card">Credit Card</option>
             <option value="bank_transfer">Bank Transfer</option>
