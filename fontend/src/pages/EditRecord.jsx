@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
-import FinancialService from '../services/financial.service';
+import { useFinancialRecord } from '../contexts/financial.context'; // ใช้ Context
 
 const EditRecord = () => {
   const { id } = useParams();
@@ -15,13 +15,14 @@ const EditRecord = () => {
   });
   const { user } = useUser();
   const navigate = useNavigate();
+  const { fetchRecord, updateRecord } = useFinancialRecord(); // ใช้ฟังก์ชันจาก Context
 
   useEffect(() => {
-    const fetchRecord = async () => {
+    const fetchRecordData = async () => {
       try {
-        const response = await FinancialService.getAllFinancialRecordById(id); // Corrected API call
-        if (response.status === 200) {
-          setFinancial(response.data); // Set the fetched data to the state
+        const record = await fetchRecord(id); // ใช้ฟังก์ชัน fetchRecord จาก Context
+        if (record) {
+          setFinancial(record);
         } else {
           throw new Error('Failed to fetch record');
         }
@@ -31,8 +32,8 @@ const EditRecord = () => {
       }
     };
 
-    fetchRecord();
-  }, [id]);
+    fetchRecordData();
+  }, [id, fetchRecord]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,7 +43,6 @@ const EditRecord = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Ensure all fields are filled
     if (!financial.category || !financial.date || !financial.description || !financial.amount || !financial.paymentMethod) {
       Swal.fire({
         title: 'Error',
@@ -52,17 +52,12 @@ const EditRecord = () => {
       return;
     }
 
-    // Prepare the updated record
     const updatedRecord = { ...financial, userID: user.id };
 
     try {
-      const response = await FinancialService.updateFinancialRecord(id, updatedRecord);
-      if (response.status === 200) {
-        Swal.fire('Updated!', 'Your record has been updated.', 'success');
-        navigate('/');
-      } else {
-        throw new Error('Failed to update record');
-      }
+      await updateRecord(id, updatedRecord); // ใช้ฟังก์ชัน updateRecord จาก Context
+      Swal.fire('Updated!', 'Your record has been updated.', 'success');
+      navigate('/');
     } catch (error) {
       console.error('Error:', error);
       Swal.fire('Failed!', 'Failed to update record.', 'error');

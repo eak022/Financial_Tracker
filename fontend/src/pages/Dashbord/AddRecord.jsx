@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
-import FinancialService from '../../services/financial.service';
+import { useFinancialRecord } from '../../contexts/financial.context'; // นำเข้า useFinancialRecord
 
 const AddRecord = () => {
   const [financial, setFinancial] = useState({
@@ -13,11 +13,12 @@ const AddRecord = () => {
     paymentMethod: ""
   });
 
-  const navigate = useNavigate(); // ใช้ useNavigate
-  const { user } = useUser(); // ดึงข้อมูลผู้ใช้จาก Clerk
+  const navigate = useNavigate();
+  const { user } = useUser();
+  const { addRecord } = useFinancialRecord(); // ใช้ฟังก์ชัน addRecord จาก Context
 
   useEffect(() => {
-    // ไม่จำเป็นต้องทำอะไรเพิ่มใน useEffect เนื่องจาก user.id จะถูกใช้งานตอนส่งข้อมูล
+    // ไม่ต้องทำอะไรเพิ่มเติมใน useEffect
   }, [user]);
 
   const handleChange = (e) => {
@@ -27,8 +28,7 @@ const AddRecord = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // ตรวจสอบว่าข้อมูลทั้งหมดได้ถูกกรอกหรือไม่
+  
     if (!financial.category || !financial.date || !financial.description || !financial.amount || !financial.paymentMethod) {
       Swal.fire({
         title: 'Error',
@@ -37,25 +37,21 @@ const AddRecord = () => {
       });
       return;
     }
-
-    // เพิ่ม userID เข้าไปในข้อมูลที่ส่ง
+  
     const record = { ...financial, userID: user.id };
-
+    console.log('Adding record:', record); // Add this line
+  
     try {
-      const response = await FinancialService.createFinancialRecord(record);
-      if (response.status === 200) {
-        Swal.fire({
-          title: 'Success',
-          text: 'Record added successfully',
-          icon: 'success'
-        }).then(() => {
-          navigate('/'); // เปลี่ยนหน้าไปที่โฮม
-        });
-      } else {
-        throw new Error('Failed to add record');
-      }
+      await addRecord(record);
+      Swal.fire({
+        title: 'Success',
+        text: 'Record added successfully',
+        icon: 'success'
+      }).then(() => {
+        navigate('/'); // เปลี่ยนหน้าไปที่โฮม
+      });
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error:', error); // Add this line
       Swal.fire({
         title: 'Error',
         text: 'Failed to add record',
