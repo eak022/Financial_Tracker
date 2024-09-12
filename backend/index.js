@@ -2,9 +2,9 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const PORT = process.env.PORT || 5000;
-const Font_URL = process.env.Font_URL;
 const cors = require("cors");
 const financialRouter = require("./router/financial.router");
+const Font_URL = process.env.Font_URL;
 const corsOption = {
     origin: Font_URL,
 };
