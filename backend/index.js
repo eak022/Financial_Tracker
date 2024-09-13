@@ -4,9 +4,9 @@ require("dotenv").config();
 const PORT = process.env.PORT || 5000;
 const cors = require("cors");
 const financialRouter = require("./router/financial.router");
-const Font_URL = process.env.Font_URL;
 const corsOption = {
-    origin: Font_URL,
+    origin: 'https://financial-frondend.vercel.app', // อย่าให้มี / ต่อท้าย
+    credentials: true, // หากใช้ cookies หรือ tokens
 };
 
 //use Middleware
