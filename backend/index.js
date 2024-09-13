@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 5000;
 const cors = require("cors");
 const financialRouter = require("./router/financial.router");
 const corsOption = {
-    origin: 'https://financial-frondend.vercel.app', // อย่าให้มี / ต่อท้าย
+    origin: ['https://financial-frondend.vercel.app', 'http://localhost:5173'], // อนุญาตหลาย origin
     credentials: true, // หากใช้ cookies หรือ tokens
 };
 
